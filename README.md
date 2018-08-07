@@ -122,8 +122,9 @@ interest-noawait /etc/init.d
 
 ```
 
-### `*.install`
+### `*.script`
 
-These scripts `postinstall.script`, `postremove.script`, `preinstall.script`, `prerm.script` will be executed if added.
+* If added, the scripts `postinstall.script` and `postremove.script` will be executed after the installation or after removing of the deb files
+* If added, the scripts `preinstall.script` and `prerm.script` will be executed before installation or before removing the deb files.
 
 Suggested shebang command: `#!/bin/sh -e`
