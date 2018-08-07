@@ -53,15 +53,16 @@ $ find .
 ### control.install
 
 control.install requires the following data fields:
-- PACKAGE
-- VERSION
-- SECTION
-- ARCHITECTURE
-- MAINTAINER_NAME
-- MAINTAINER_EMAIL
-- DESCRIPTION
+- PACKAGE (**required**)
+- VERSION (**required**)
+- SECTION (**required**)
+- ARCHITECTURE (**required**)
+- MAINTAINER_NAME (**required**)
+- MAINTAINER_EMAIL (**required**)
+- DESCRIPTION (**required**)
 - DEPENDENCIES
 - HOMEPAGE
+- PRIORITY
 
 Example of `control.install` file:
 
