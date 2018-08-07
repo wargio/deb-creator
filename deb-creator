@@ -1,0 +1,185 @@
+#!/bin/bash
+SELFPID=$$
+ROOTFOLDER="$1"
+
+function die { echo "$*" 1>&2 ; kill -2 $SELFPID; }
+
+function debug { >&2 echo "$*" ; }
+
+function check_dep  {
+	command -v "$1" > /dev/null 2>&1 || die "'$1' is not installed and it is required."
+}
+
+function verify_version {
+	V=$(echo "$1" | grep -E '(^\d+:)?(\d[A-Za-z0-9.+-~:]{0,35})(-[A-Za-z0-9.+~]+$)?')
+	[ ! -z "$V" ] || die "Version '$1' is not following debian standards."
+}
+
+function directory_exists {
+	[ -d "$1" ] || die "directory '$1' is missing"
+}
+
+function file_exists {
+	[ -f "$1" ] || die "file '$1' is missing"
+}
+
+function copy {
+	[ ! -f "$1" ] || cp "$1" "$2"
+}
+
+function chmod_add_exec {
+	[ ! -f "$1" ] || chmod 755 "$1"
+}
+
+function verify_requirements {
+	check_dep bash
+	check_dep mktemp
+	check_dep ar
+	check_dep tar
+	check_dep gzip
+	directory_exists data
+	file_exists control.install
+}
+
+function get_property  {
+    V=$(grep "^$1=" "$ROOTFOLDER/control.install" | cut -d '=' -f2)
+    [ ! -z "$V" ] || [ ! -z "$2" ] || die "'$1' not found in control.install and is required."
+    CMD="printf $V"
+    if [ -z "$V" ]; then echo "$2" ; else eval $CMD ; fi
+}
+
+function calculate_size_folder {
+	S=$(du -ks "$ROOTFOLDER/data/$1/" 2> /dev/null | cut -f1)
+	if [ -z "$S" ]; then echo "0" ; else echo "$S" ; fi
+}
+
+function calculate_size {
+	usr=`calculate_size_folder usr`
+	bin=`calculate_size_folder bin`
+	lib=`calculate_size_folder lib`
+	sum=$((usr + bin + lib))
+	echo "$sum"
+}
+
+function deb-control-control {
+	INSTALLSIZE=$(calculate_size)
+	VERSION=`get_property "VERSION"`
+	PACKAGENAME=`get_property "PACKAGE"`
+	ARCHITECTURE=`get_property "ARCHITECTURE"`
+	MAINTAINER_NAME=`get_property "MAINTAINER_NAME"`
+	MAINTAINER_EMAIL=`get_property "MAINTAINER_EMAIL"`
+	DESCRIPTION=`get_property "DESCRIPTION"`
+	SECTION=`get_property "SECTION" "user/hidden"`
+	DEPENDENCIES=`get_property "DEPENDENCIES" "-"`
+	HOMEPAGE=`get_property "HOMEPAGE" "-"`
+
+	verify_version "$VERSION"
+
+	echo "Package: $PACKAGENAME" > control
+	echo "Version: $VERSION" >> control
+	echo "Priority: optional" >> control
+	echo "Maintainer: $MAINTAINER_NAME <$MAINTAINER_EMAIL>" >> control
+	echo "Installed-Size: $INSTALLSIZE" >> control
+	echo "Section: $SECTION" >> control
+	echo "Architecture: $ARCHITECTURE" >> control
+	[ "$DEPENDENCIES" != "-" ] && echo "Depends: $DEPENDENCIES"  >> control
+	[ "$HOMEPAGE" != "-" ] && echo "Homepage: $HOMEPAGE" >> control
+	echo "Description: $DESCRIPTION" >> control
+
+}
+
+function deb-control-md5sums {
+	T=$(pwd)
+	cd "$ROOTFOLDER/data/"
+	find . -type f -exec md5sum {} + > "$T/md5sums"
+	sed -i 's/\ \.\// /g' "$T/md5sums"
+	cd "$T"
+}
+
+function deb-control-conffiles {
+	if [ -d "$ROOTFOLDER/data/etc/" ]; then
+		T=$(pwd)
+		cd "$ROOTFOLDER/data/"
+		find "./etc/" -type f > "$T/conffiles"
+		sed -i 's/\ \.\// /g' "$T/conffiles"
+		cd "$T"
+	fi
+}
+
+function deb-control {
+	echo "deb-control"
+	mkdir control
+	cd control
+
+	deb-control-control
+	deb-control-md5sums
+	deb-control-conffiles
+
+	## copying them only if they exists
+	copy "$ROOTFOLDER/triggers" triggers
+	## scripts
+	copy "$ROOTFOLDER/postinstall.script" postinst
+	copy "$ROOTFOLDER/postremove.script" postrm
+	copy "$ROOTFOLDER/preinstall.script" preinst
+	copy "$ROOTFOLDER/preremove.script" prerm
+
+	## `chmod +x` them only if they exists
+	chmod_add_exec postinst
+	chmod_add_exec postrm
+	chmod_add_exec preinst
+	chmod_add_exec prerm
+
+	## creating gzipped tar
+	tar czf ../control.tar.gz .
+	
+	cd ..
+	rm -rf control
+}
+
+function deb-data {
+	echo "deb-data"
+	T=$(pwd)
+	cd "$ROOTFOLDER/data/"
+	tar czf "$T/data.tar.gz" .
+	cd "$T"
+}
+
+function deb-debian-binary {
+	echo "deb-debian-binary"
+	echo "2.0" > debian-binary
+}
+
+function deb-packer {
+	echo "deb-packer"
+	TMPFOLDER=$(mktemp -d)
+	cd "$TMPFOLDER"
+
+	VERSION=`get_property "VERSION"`
+	PACKAGENAME=`get_property "PACKAGE"`
+	ARCHITECTURE=`get_property "ARCHITECTURE"`
+	DEBPACKAGE="$PACKAGENAME""_$VERSION""_$ARCHITECTURE.deb"
+
+	verify_version "$VERSION"
+
+	deb-data
+	deb-debian-binary
+	deb-control
+
+	
+	ar -rv "$DEBPACKAGE" debian-binary control.tar.gz data.tar.gz || die "Failed to create $DEBPACKAGE"
+
+	copy "$DEBPACKAGE" "$ROOTFOLDER/$DEBPACKAGE"
+
+	cd "$ROOTFOLDER"
+	rm -rf "$TMPFOLDER"
+}
+
+function main {
+	[ -d "$ROOTFOLDER" ] || die "usage: ./deb-creator <project-folder>"
+	cd "$ROOTFOLDER"
+	ROOTFOLDER=$(pwd)
+	verify_requirements
+	deb-packer
+}
+
+main
