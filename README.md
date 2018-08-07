@@ -21,13 +21,13 @@ $ ./deb-creator <project-folder>
 ## Required File Structure:
 
 - `project/` directory:
-  - `data/` (required)
-  - `control.install` (required)
-  - `postinstall.script` (not required)
-  - `postremove.script` (not required)
-  - `preinstall.script` (not required)
-  - `preremove.script` (not required)
-  - `triggers` (not required)
+  - `data/` (**required**)
+  - `control.install` (**require**)
+  - `postinstall.script` (_not required_)
+  - `postremove.script` (_not required_)
+  - `preinstall.script` (_not required_)
+  - `preremove.script` (_not required_)
+  - `triggers` (_not required_)
 
 ### Folder data/
 
