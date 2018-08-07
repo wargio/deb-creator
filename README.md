@@ -60,7 +60,7 @@ control.install requires the following data fields:
 - MAINTAINER_NAME (**required**)
 - MAINTAINER_EMAIL (**required**)
 - DESCRIPTION (**required**)
-- DEPENDENCIES
+- DEPENDENCIES (_suggested_)
 - HOMEPAGE
 - PRIORITY
 
@@ -74,7 +74,6 @@ ARCHITECTURE="amd64"
 DEPENDENCIES="libc6 (>= 2.17), adduser"
 MAINTAINER_NAME="maintainer full name"
 MAINTAINER_EMAIL="maintainer@email.example.com"
-HOMEPAGE="https://my.example.com/coolthis-lib.html"
 DESCRIPTION="my project description\nthat can contain new lines."
 ```
 
