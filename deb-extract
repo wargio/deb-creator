@@ -1,0 +1,36 @@
+#!/bin/bash
+function main {
+	INPUT="$1"
+
+	extract_tar() {
+		filename=$(basename -- "$1")
+		extension="${filename##*.}"
+		filename="${filename%.tar.*}"
+		mkdir "$filename"
+		cd "$filename"
+		tar xf "../$1"
+		cd ..
+	}
+
+	FILENAME_NOEXT=$(basename "$INPUT" ".deb")
+	FILENAME=$(basename "$INPUT")
+
+	mkdir "$FILENAME_NOEXT.extracted"
+
+	cd "$FILENAME_NOEXT.extracted"
+
+	ar x "../$FILENAME"
+
+	for i in $(ls *.tar*); do
+		extract_tar "$i"
+	done
+
+	echo "$INPUT extracted in $FILENAME_NOEXT.extracted"
+}
+
+if [ -z "$1" ]; then
+	echo "usage: ./deb-extract <file.deb>"
+	exit 1
+fi
+
+main "$1"

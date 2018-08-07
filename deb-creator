@@ -72,12 +72,13 @@ function deb-control-control {
 	SECTION=`get_property "SECTION" "user/hidden"`
 	DEPENDENCIES=`get_property "DEPENDENCIES" "-"`
 	HOMEPAGE=`get_property "HOMEPAGE" "-"`
+	PRIORITY=`get_property "PRIORITY" "optional"`
 
 	verify_version "$VERSION"
 
 	echo "Package: $PACKAGENAME" > control
 	echo "Version: $VERSION" >> control
-	echo "Priority: optional" >> control
+	echo "Priority: $PRIORITY" >> control
 	echo "Maintainer: $MAINTAINER_NAME <$MAINTAINER_EMAIL>" >> control
 	echo "Installed-Size: $INSTALLSIZE" >> control
 	echo "Section: $SECTION" >> control
