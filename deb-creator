@@ -11,7 +11,7 @@ function check_dep  {
 }
 
 function verify_version {
-	V=$(echo "$1" | grep -E '(^\d+:)?(\d[A-Za-z0-9.+-~:]{0,35})(-[A-Za-z0-9.+~]+$)?')
+	V=$(echo "$1" | grep -E '(^[0-9]+:)?([0-9][A-Za-z0-9.+-~:]{0,35})(-[A-Za-z0-9.+~]+$)?')
 	[ ! -z "$V" ] || die "Version '$1' is not following debian standards."
 }
 
@@ -42,10 +42,10 @@ function verify_requirements {
 }
 
 function get_property  {
-    V=$(grep "^$1=" "$ROOTFOLDER/control.install" | cut -d '=' -f2)
+    V=$(grep "^$1=" "$ROOTFOLDER/control.install" | cut -d '=' -f2-)
     [ ! -z "$V" ] || [ ! -z "$2" ] || die "'$1' not found in control.install and is required."
     CMD="printf $V"
-    if [ -z "$V" ]; then echo "$2" ; else eval $CMD ; fi
+    if [ -z "$V" ]; then echo "$2" ; else eval $CMD || die "Bad input: $1=$V" ; fi
 }
 
 function calculate_size_folder {
@@ -102,7 +102,7 @@ function deb-control-conffiles {
 		T=$(pwd)
 		cd "$ROOTFOLDER/data/"
 		find "./etc/" -type f > "$T/conffiles"
-		sed -i 's/\ \.\// /g' "$T/conffiles"
+		sed -i 's/^\.\//\//g' "$T/conffiles"
 		cd "$T"
 	fi
 }
@@ -163,12 +163,13 @@ function deb-packer {
 	deb-control
 
 	
-	ar -rv "$DEBPACKAGE" debian-binary control.tar.gz data.tar.gz || die "Failed to create $DEBPACKAGE"
+	ar -r "$DEBPACKAGE" debian-binary control.tar.gz data.tar.gz || die "Failed to create $DEBPACKAGE"
 
 	copy "$DEBPACKAGE" "$ROOTFOLDER/$DEBPACKAGE"
 
 	cd "$ROOTFOLDER"
 	rm -rf "$TMPFOLDER"
+	echo "$DEBPACKAGE created under $ROOTFOLDER"
 }
 
 function main {
