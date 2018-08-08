@@ -108,7 +108,6 @@ function deb-control-conffiles {
 }
 
 function deb-control {
-	echo "deb-control"
 	mkdir control
 	cd control
 
@@ -138,7 +137,6 @@ function deb-control {
 }
 
 function deb-data {
-	echo "deb-data"
 	T=$(pwd)
 	cd "$ROOTFOLDER/data/"
 	tar czf "$T/data.tar.gz" .
@@ -146,12 +144,10 @@ function deb-data {
 }
 
 function deb-debian-binary {
-	echo "deb-debian-binary"
 	echo "2.0" > debian-binary
 }
 
 function deb-packer {
-	echo "deb-packer"
 	TMPFOLDER=$(mktemp -d)
 	cd "$TMPFOLDER"
 
